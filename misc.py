@@ -12,11 +12,14 @@ def _5(n): return n[5]
 # print and flush
 def printme(s): print(s, end='', flush=True)
 
+def load(filename):
+    with open(filename, 'rb') as file:
+        return pickle.load(file)
+    
 # load a value from a pickle if it exists, otherwise use the default
 def load_or_new(filename, default):
     if (os.path.exists(filename)):
-        with open(filename, 'rb') as file:
-            return pickle.load(file)
+        return load(filename)
     else:
         return save(filename, default)
 
