@@ -1,11 +1,15 @@
+#import findspark
+#findspark.init()
+
 import pyspark
 from pyspark.sql import SparkSession
 from pyspark import SparkContext
 
-SparkContext.setSystemProperty('spark.executor.memory', '16g')
+SparkContext.setSystemProperty('spark.executor.memory', '8g')
+SparkContext.setSystemProperty('spark.python.worker.memory', '8g')
 ss = SparkSession\
      .builder\
-     .master("local[*]") \
+     .master("local[20]") \
      .appName("testing") \
      .getOrCreate()
 
@@ -33,3 +37,4 @@ def save_csv(filename, df, sep=","):
                             sep=sep,\
                             header=True,\
                             )
+

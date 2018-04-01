@@ -1,5 +1,6 @@
 import os
 import pickle
+import math
 
 # pair accessors
 def _0(n): return n[0]
@@ -28,5 +29,10 @@ def save(filename, obj):
     with open(filename, 'wb') as file:
         pickle.dump(obj, file)
     return obj
+
+# maths
+
+def lg(d):
+    return math.log(d,2.0)
 
 __all__ = ["_0", "_1", "_2", "_3", "_4", "_5", "printme", "load_or_new", "save"]
