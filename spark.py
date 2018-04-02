@@ -1,12 +1,16 @@
 #import findspark
 #findspark.init()
 
+import os
+import shutil
+
 import pyspark
 from pyspark.sql import SparkSession
 from pyspark import SparkContext
 
 SparkContext.setSystemProperty('spark.executor.memory', '8g')
 SparkContext.setSystemProperty('spark.python.worker.memory', '8g')
+SparkContext.setSystemProperty('spark.driver.memory', '16g')
 ss = SparkSession\
      .builder\
      .master("local[20]") \
@@ -26,15 +30,16 @@ sparkContext = sc
 sparkSQL = sql
 
 def load_csv(filename, sep=","):
-        return ss.read.csv(filename,\
-                           inferSchema=True,\
-                           sep=sep,\
-                           header=True,\
-                           )
+    return ss.read.csv(filename,\
+                       inferSchema=True,\
+                       sep=sep,\
+                       header=True,\
+                       )
 
 def save_csv(filename, df, sep=","):
-        return df.write.csv(filename,\
-                            sep=sep,\
-                            header=True,\
-                            )
+    if (os.path.exists(filename)): shutil.rmtree(filename)
+    return df.write.csv(filename,\
+                        sep=sep,\
+                        header=True,\
+                        )
 
