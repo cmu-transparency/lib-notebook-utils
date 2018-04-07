@@ -167,6 +167,7 @@ class Spark(object):
                              inferschema=inferschema
                             ).load(filename)
 
+
 def assemble_features(dataframe, columns,
                       output_column="features", exclude=None):
     """ Collect the set of given features into a vector column to use
