@@ -3,6 +3,7 @@
 
 import os
 import shutil
+from typing import List, Dict, Set
 
 import pyspark
 from pyspark.sql import SparkSession
@@ -64,15 +65,46 @@ class ValueMapper(object):
     values of a dataset that were converted to doubles in order to use
     various spark models. """
 
-    __slots__ = ['target_idx', 'target_name', 'columns', 'types', 'values']
+    __slots__ = ['columns', 'types', 'values', 'indices', "target", "columns_by_idx", "types_by_idx", "values_by_idx", "target_name"]
 
-    def __init__(self, target_idx, columns_by_idx, types_by_idx, values_by_idx):
-        self.target_idx = target_idx
-        self.target_name = str(columns_by_idx[target_idx])
+    def __init__(self, columns_by_idx: List[str], types_by_idx, values_by_idx):
+        #self.target_idx = target_idx
+        #self.target_name = str(columns_by_idx[target_idx])
+        self.columns_by_idx = columns_by_idx
+        self.types_by_idx = types_by_idx
+        self.values_by_idx = values_by_idx
+        self.target = None
+        self.target_name = None
 
-        self.columns = ByKeyAndIndex(columns_by_idx)
-        self.types = ByKeyAndIndex(types_by_idx, keys=columns_by_idx)
-        self.values = ByKeyAndIndex(values_by_idx, keys=columns_by_idx)
+        self._reconstruct()
+
+    def _reconstruct(self):
+        self.columns = ByKeyAndIndex(self.columns_by_idx, keys=self.columns_by_idx)
+        self.types = ByKeyAndIndex(self.types_by_idx, keys=self.columns_by_idx)
+        self.values = ByKeyAndIndex(self.values_by_idx, keys=self.columns_by_idx) 
+        self.indices = ByKeyAndIndex(self._compute_indices(), keys=self.columns_by_idx)
+
+    def remove(self, idx: int):
+        self.columns_by_idx.pop(idx)
+        self.types_by_idx.pop(idx)
+        self.values_by_idx.pop(idx)
+        self._reconstruct()
+
+    def _compute_indices(self):
+        return [{name: index for (name, index) in zip(col, range(len(col)))} for col in self.values]
+
+    def set_target(self, target_col: str):
+        target_idx = self.columns.keys_by_index.index(target_col)
+        target_type = self.types[target_idx]
+        target_values = self.values[target_idx]
+        self.target_name = target_col
+
+        print(target_idx)
+        print(target_type)
+        print(target_values)
+
+        self.target = ValueMapper([target_col], [target_type], [target_values])
+        self.remove(target_idx)
 
 class Spark(object):
     """ Store the various elements of of a spark setup and context."""
@@ -311,24 +343,25 @@ def string_of_split(split, namer=None):
 
     ret = u""
     if namer is None:
-        ret = u"f%d" % split.featureIndex()
+        ret = u"f%d " % split.featureIndex()
     else:
         ret = u"%s " % namer.columns[split.featureIndex()]
 
-    idx = split.featureIndex() + 1
+    idx = split.featureIndex()
 
     if typ == "CategoricalSplit":
         # https://spark.apache.org/docs/latest/api/scala/index.html#org.apache.spark.ml.tree.CategoricalSplit
 
         if namer is None:
-            ret += "∈ {%s}" % u",".join([str(c) for c in split.leftCategories])
+            ret += "∈ {%s}" % u",".join([str(c) for c in split.leftCategories()])
         else:
             ret += "∈ {%s}" % u",".join([namer.values[idx][int(cat)]
                                          for cat in split.leftCategories()])
-    elif typ == "ContinuousSpit":
+    elif typ == "ContinuousSplit":
         ret += u"≤ %f" % split.threshold()
+
     else:
-        ret += u"unknown split: % s" % str(split)
+        ret += u"unknown split: %s (%s)" % (str(split), str(typ))
 
     return ret
 
@@ -346,9 +379,9 @@ def string_of_node(node, namer=None):
         info = u"prediction: output = %d" % node.prediction()
     else:
         info = u"prediction: %s = %s" % (namer.target_name,
-                                         namer.values
-                                         [namer.target_idx]
-                                         [node.prediction()])
+                                         namer.target.values
+                                         [0]
+                                         [int(node.prediction())])
 
     ret = u""
 
@@ -366,8 +399,8 @@ def string_of_node(node, namer=None):
             ret += u"output = %d" % int(node.prediction())
         else:
             ret += u"%s = %s" % (namer.target_name,
-                                 namer.values
-                                 [namer.target_idx]
+                                 namer.target.values
+                                 [0]
                                  [int(node.prediction())])
     else:
         ret += u"unknown class"
