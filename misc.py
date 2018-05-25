@@ -11,22 +11,33 @@ def _3(n): return n[3]
 def _4(n): return n[4]
 def _5(n): return n[5]
 
+
+# useful mixins
+
+class withprintedvars(withlocals):
+    def __init__(self):
+        object.__init__(self)
+
+    def __str__(self): return str(self.__dict__)
+    def __repr__(self): return repr(self.__dict__)
+
 # print and flush
 def printme(s): print(s, end='', flush=True)
 
-def load(filename):
+def load(filename, pickler=pickle):
+    print("load %s via %s" % (filename, pickler.__name__))
     with open(filename, 'rb') as file:
-        return pickle.load(file)
+        return pickler.load(file)
     
 # load a value from a pickle if it exists, otherwise use the default
-def load_or_new(filename, default):
+def load_or_new(filename, default, pickler=pickle):
     if (os.path.exists(filename)):
-        return load(filename)
+        return load(filename, pickler=pickler)
     else:
-        return save(filename, default)
+        return save(filename, default, pickler=pickler)
 
 # save a value to a pickle
-def save(filename, obj):
+def save(filename, obj, pickler=pickle):
     with open(filename, 'wb') as file:
         pickle.dump(obj, file)
     return obj
@@ -70,6 +81,37 @@ def named_of_indexed(items, keys=None):
         else:
             ret[str(item)] = item
     return ret
+
+# collections
+
+class ArrayDict(dict):
+    """ Combination of array and dictionary, can be accessed either way. """
+
+    #__slots__ = ['keys_by_index', 'items_by_index', 'items_by_key']
+
+    def __init__(self, items_by_index, keys=None, **kwargs):
+        """ If the keys for the items are not provided, the items
+        themselves become the keys."""
+
+        if keys is None:
+            keys = items_by_index
+ 
+        dict.__init__(self, named_of_indexed(items_by_index, keys=keys), **kwargs)
+        
+        self.keys_by_index  = keys
+        self.items_by_index = items_by_index
+
+    def __setitem__(self, index, v):
+        if isinstance(index, int):
+            self.items_by_index[index] = v
+        else:
+            dict.__setitem__(self, str(index), v)
+        
+    def __getitem__(self, index):
+        if isinstance(index, int):
+            return self.items_by_index[index]
+        else:
+            return dict.__getitem__(self, str(index))
 
 # command line parsing
 
