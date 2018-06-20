@@ -2,6 +2,14 @@ import os
 import pickle
 import math
 import argparse
+import vdom
+
+
+# html/vdom
+html = vdom.create_component("html", allow_children=True)
+head = vdom.create_component("head", allow_children=True)
+body = vdom.create_component("body", allow_children=True)
+
 
 # pair accessors
 def _0(n): return n[0]
@@ -12,8 +20,7 @@ def _4(n): return n[4]
 def _5(n): return n[5]
 
 
-# useful mixins
-
+# misc mixins
 class withprintedvars(object):
     def __init__(self):
         object.__init__(self)
@@ -21,11 +28,12 @@ class withprintedvars(object):
     def __str__(self): return str(self.__dict__)
     def __repr__(self): return repr(self.__dict__)
 
+
 # print and flush
 def printme(s): print(s, end='', flush=True)
 
 def load(filename, pickler=pickle):
-    print("load %s via %s" % (filename, pickler.__name__))
+    #print("load %s via %s" % (filename, pickler.__name__))
     with open(filename, 'rb') as file:
         return pickler.load(file)
     
