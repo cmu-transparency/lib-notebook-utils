@@ -14,7 +14,7 @@ def _5(n): return n[5]
 
 # useful mixins
 
-class withprintedvars(withlocals):
+class withprintedvars(object):
     def __init__(self):
         object.__init__(self)
 
