@@ -20,6 +20,18 @@ def _4(n): return n[4]
 def _5(n): return n[5]
 
 
+# ranges
+def frange(begin, end, iter=1.0):
+    i = begin
+    while i < end:
+        yield(i)
+        i += iter
+    
+
+# dict utils
+def dict_except(d, e):
+    return {k: v for k,v in d.items() if k != e}
+
 # misc mixins
 class withprintedvars(object):
     def __init__(self):
@@ -28,7 +40,15 @@ class withprintedvars(object):
     def __str__(self): return str(self.__dict__)
     def __repr__(self): return repr(self.__dict__)
 
+class withlocals(object):
+    def __init__(self):
+        object.__init__(self)
+    def locals(self,skip=[]):
+        return {k:v for k, v in self.__dict__.items() if not (k.startswith('__')
+                                                             and k.endswith('__'))
+                                                           and k not in skip}
 
+    
 # print and flush
 def printme(s): print(s, end='', flush=True)
 
