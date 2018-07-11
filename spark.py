@@ -1,13 +1,21 @@
+""" Apache Spark utilities. """
+
 #import findspark
 #findspark.init()
 
 import os
 import shutil
-from typing import List, Dict, Set
+from typing import List, Iterable
 
-import pyspark
-from pyspark.sql import SparkSession
-from pyspark import SparkContext
+#import pyspark                        # pylint: disable=import-error
+from pyspark import SparkContext      # pylint: disable=import-error
+from pyspark.sql import SQLContext, SparkSession, DataFrame  # pylint: disable=import-error
+from pyspark.sql.types import StringType         # pylint: disable=import-error
+from pyspark.ml.feature import StringIndexer, VectorAssembler  # pylint: disable=import-error
+
+from misc import named_of_indexed, tab, A
+from jvm import class_name
+
 
 #SparkContext.setSystemProperty('spark.executor.memory', '8g')
 #SparkContext.setSystemProperty('spark.python.worker.memory', '8g')
@@ -21,7 +29,7 @@ from pyspark import SparkContext
 #     .config('spark.driver.memory', '8G')\
 #     .getOrCreate()
 #     .set('spark.driver.memory', '45G')
-#     .set('spark.driver.maxResultSize', '10G')  
+#     .set('spark.driver.maxResultSize', '10G')
 #conf = SparkConf().setAppName("App")
 #conf = (conf.setMaster('local[*]')
 #        .set('spark.executor.memory', '4G')
@@ -30,19 +38,12 @@ from pyspark import SparkContext
 
 ### old spark utils
 
-from pyspark import SparkConf, SparkContext
-from pyspark.sql import SQLContext
-from pyspark.sql.types import StringType
-from pyspark.ml.feature import StringIndexer, VectorAssembler
-
-from util.misc import named_of_indexed, tab
-from util.jvm import class_name
-
 #from py4j.java_collections import JavaIterator
 
-class ByKeyAndIndex(object):
-    """ A list of items that can be accessed either by index or by a
-    key."""
+class ByKeyAndIndex(object):  # pylint: disable=too-few-public-methods
+    """
+    A list of items that can be accessed either by index or by a key.
+    """
 
     __slots__ = ['keys_by_index', 'items_by_index', 'items_by_key']
 
@@ -57,15 +58,15 @@ class ByKeyAndIndex(object):
     def __getitem__(self, index):
         if isinstance(index, int):
             return self.items_by_index[index]
-        else:
-            return self.items_by_key[str(index)]
+        return self.items_by_key[str(index)]
 
-class ValueMapper(object):
+class ValueMapper(object):  # pylint: disable=too-many-instance-attributes
     """ Holds the information about column names of a dataset, and the
     values of a dataset that were converted to doubles in order to use
     various spark models. """
 
-    __slots__ = ['columns', 'types', 'values', 'indices', "target", "columns_by_idx", "types_by_idx", "values_by_idx", "target_name"]
+    __slots__ = ['columns', 'types', 'values', 'indices', "target",
+                 "columns_by_idx", "types_by_idx", "values_by_idx", "target_name"]
 
     def __init__(self, columns_by_idx: List[str], types_by_idx, values_by_idx):
         #self.target_idx = target_idx
@@ -81,10 +82,12 @@ class ValueMapper(object):
     def _reconstruct(self):
         self.columns = ByKeyAndIndex(self.columns_by_idx, keys=self.columns_by_idx)
         self.types = ByKeyAndIndex(self.types_by_idx, keys=self.columns_by_idx)
-        self.values = ByKeyAndIndex(self.values_by_idx, keys=self.columns_by_idx) 
+        self.values = ByKeyAndIndex(self.values_by_idx, keys=self.columns_by_idx)
         self.indices = ByKeyAndIndex(self._compute_indices(), keys=self.columns_by_idx)
 
     def remove(self, idx: int):
+        """ Remove an item by index. """
+
         self.columns_by_idx.pop(idx)
         self.types_by_idx.pop(idx)
         self.values_by_idx.pop(idx)
@@ -94,6 +97,8 @@ class ValueMapper(object):
         return [{name: index for (name, index) in zip(col, range(len(col)))} for col in self.values]
 
     def set_target(self, target_col: str):
+        """ Set target column name. """
+
         target_idx = self.columns.keys_by_index.index(target_col)
         target_type = self.types[target_idx]
         target_values = self.values[target_idx]
@@ -114,11 +119,14 @@ class Spark(object):
     def __init__(self, master="local[*]"):
         """ Create only the spark configuration at first. """
 
-        self.conf = SparkConf().setMaster(master)
+        self.conf = SparkConf().setMaster(master)  # pylint: disable=undefined-variable
         self.master = master
 
         self.spark = None
         self.sql = None
+
+        self.jvm = None
+        self.session = None
 
     def start(self):
         """ Initialize the rest of the stuff, assuming the
@@ -131,12 +139,12 @@ class Spark(object):
             .getOrCreate()
         self.spark = self.session.sparkContext
         self.sql = SQLContext(self.spark)
-        self.jvm = SparkContext._jvm
+        self.jvm = SparkContext._jvm  # pylint: disable=protected-access
 
         print("spark version = " + self.spark.version)
 
-        for row in (self.spark._conf.getAll()):
-            print (row)
+        for row in self.spark._conf.getAll():  # pylint: disable=protected-access
+            print(row)
 
         return self
 
@@ -168,26 +176,32 @@ class Spark(object):
             if type(ret) is type(subobject):
                 setattr(self, component, ret)
                 return self
-            else: return ret
+            return ret
 
         if callable(field):
             return enclosed
-        else:
-            return field
+        return field
 
     def load_csv(self, filename, sep=","):
+        """ Load a CSV file into a dataframe. """
+
         return self.session.read.csv(filename,\
                            inferSchema=True,\
                            sep=sep,\
                            header=True,\
                            )
 
-    def save_csv(self, filename, df, sep=","):
-        if (os.path.exists(filename)): shutil.rmtree(filename)
-        return df.write.csv(filename,\
-                            sep=sep,\
-                            header=True,\
-                            )
+    def save_csv(self, filename: str, dataframe: DataFrame, sep: str = ","):
+        # pylint: disable=no-self-use
+        """ Save a dataframe to CSV file. """
+
+        if os.path.exists(filename):
+            shutil.rmtree(filename)
+
+        return dataframe.write.csv(filename,\
+                                   sep=sep,\
+                                   header=True,\
+                                   )
 
     def read_csv(self, filename,
                  header='true', encoding='UTF-8', inferschema='true'):
@@ -236,7 +250,7 @@ def index_nominals(dataframe, renamer=lambda string: u"indexed_%s" % string):
             # Encode nominal features into doubles.
             indexer = StringIndexer(inputCol=col,
                                     outputCol=renamer(col)
-                                    ).fit(dataframe_indexing)
+                                   ).fit(dataframe_indexing)
             labels_by_idx[idx] = indexer.labels
             dataframe_indexing = indexer.transform(dataframe_indexing)
             columns.append(renamer(col))
@@ -247,22 +261,26 @@ def index_nominals(dataframe, renamer=lambda string: u"indexed_%s" % string):
     # Create the object that holds the information necessary to get
     # column and value names for the various converted features and
     # values.
-    namer = ValueMapper(0, names_by_idx, types_by_idx, labels_by_idx)
+    namer = ValueMapper(#0,
+        columns_by_idx=names_by_idx,
+        types_by_idx=types_by_idx,
+        values_by_idx=labels_by_idx
+        )
 
     return dataframe_indexing, columns, namer
 
-def pylist_of_scala_list(l):
+def pylist_of_scala_list(alist: Iterable[A]):
     """
     Convert scala type :: (the cons in a lisp-like language) to a
     python list. Py4j has issues with these for some reason.
     """
 
-    typ = class_name(l)
+    typ = class_name(alist)
 
     if typ == "Nil$":
         return []
     elif typ == "$colon$colon":
-        return [l.head()] + pylist_of_scala_list(l.tail())
+        return [alist.head()] + pylist_of_scala_list(alist.tail())
 
 def string_of_mllib_split(split, namer=None):
     """
@@ -313,7 +331,7 @@ def string_of_mllib_node(node, namer=None):
     if not node.isLeaf():
         # https://spark.apache.org/docs/latest/api/scala/index.html#org.apache.spark.ml.tree.InternalNode
         ret += u"if %s (%s) then\n" % \
-               (string_of_mllib_split(
+               (string_of_mllib_split( \
                   node.split().get(),
                   namer),
                 info) + \

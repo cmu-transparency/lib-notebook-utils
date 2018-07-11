@@ -1,85 +1,150 @@
+"""
+Utilities related to the English language. Currently only contains
+adjective/adverb phrases indicating probability along with
+experimentally derived perception of strength.
+"""
+
 import utils.misc as misc
 
-class Phrase(misc.withlocals):
-    def __init__(self, text=None):
-        self.text = text
-        
-    def __str__(self): return self.text
-    #def __repr__(self): return f"Phrase({repr(self.text)})"
-        
-class Modifier(Phrase):
-    def __init__(self, typ="NounPhrase", text=None, positive=True, strength=0.5, normal=False, precision=0.5):
-        Phrase.__init__(self, text=text)
-        self.positive = positive
-        self.strength = strength
-        self.typ = typ
-        self.precision = precision
-        self.normal = True
-        if not normal:
-            if strength <= 0.5:
-                self.positive = False
-            else:
-                self.positive = True
-            self.strength = 2.0*(strength-0.5)
+class Phrase(misc.LocalsMixin):  # pylint: disable=too-few-public-methods
+    """ English phrase. """
 
-    #def __str__(self):
+    def __init__(self, text: str = None):
+        self.text = text
+
+    def __str__(self):
+        return self.text
+    #def __repr__(self): return f"Phrase({repr(self.text)})"
+
+#class Strength(object):
+#    """ Probability strength and its statistics. """
+#
+#    def __init__(self, strength: float, positive, normal
+
+class Modifier(Phrase):  # pylint: disable=too-many-arguments,too-few-public-methods
+    """ Modifier phrases (indicate strength and positivity). """
+
+    def __init__(self,
+                 typ: str = "NounPhrase",
+                 text: str = None,
+                 strength: float = None,
+                 precision: float = None):
+
+        Phrase.__init__(self, text=text)
+
+        self.strength = strength
+        self.precision = precision
+        self.typ = typ
+
+
+     #def __str__(self):
         #return f"{self.text}/\t{self.strength}@\t{self.precision}"
 
     def __repr__(self):
-        return f"{self.typ}(\ttext={self.text},\tpositive={self.positive},\tstrength={self.strength},\tnormal={self.normal},\tprecision={self.precision})"
+        return "{self.typ}(\ttext={self.text},\
+                  \tstrength={self.strength},\
+                  \tprecision={self.precision}\
+                 )".replace("\n", "")            # pylint: disable=E0001
 
 class AdverbPhrase(Modifier):
-    def __init__(self, text=None, positive=True, strength=0.5, normal=False, precision=0.5):
-        Modifier.__init__(self, "AdverbPhrase", text, positive, strength, normal, precision)
-        
-    def to_adverb(self): return self
+    """ An adverb phrase. """
+
+    def __init__(self,
+                 text: str = None,
+                 strength: float = 0.5,
+                 precision: float = 0.5):
+
+        Modifier.__init__(self, "AdverbPhrase", text,
+                          strength, precision)
+
+    def to_adverb(self):
+        """ Convert to adverb phrase. """
+
+        return self
 
 class AdjectivePhrase(Modifier):
-    def __init__(self, text=None, positive=True, strength=0.5, normal=False, precision=0.5):
-        Modifier.__init__(self, "AdjectivePhrase", text, positive, strength, normal, precision)
-        
+    """ An adjective phrase. """
+
+    def __init__(self,
+                 text: str = None,
+                 strength: float = 0.5,
+                 precision: float = 0.5):
+
+        Modifier.__init__(self, "AdjectivePhrase", text,
+                          strength, precision)
+
     def to_adverb(self):
+        """ Convert to adverb phrase. """
+
         text = self.text
         ending = text[-1]
         if ending == "e":
             text = text[0:-1]+"ly"
         else:
             text = text+"ly"
-        
-        return AdverbPhrase(**self.locals(skip=["text", "typ"]), text=text)
-    
+
+        return AdverbPhrase(**self.locals(skip=["text", "typ"]),
+                            text=text)
+
 class NounPhrase(Modifier):
-    def __init__(self, text=None, positive=True, strength=0.5, normal=False, precision=0.5):
-        Modifier.__init__(self, "NounPhrase", text, positive, strength, normal, precision)
-        
+    """ A noun phrase. """
+
+    def __init__(self,
+                 text: str = None,
+                 strength: float = 0.5,
+                 precision: float = 0.5):
+
+        Modifier.__init__(self, "NounPhrase", text,
+                          strength, precision)
+
     def to_adverb(self):
-        return AdverbPhrase(**self.locals(skip=["text", "typ"]), text="with " + self.text)
+        """ Convert to adverb phrase. """
+
+        return AdverbPhrase(**self.locals(skip=["text", "typ"]),
+                            text="with " + self.text)
 
 class VerbPhrase(Modifier):
-    def __init__(self, text=None, positive=True, strength=0.5, normal=False, precision=0.5):
-        Modifier.__init__(self, "VerbPhrase", text, positive, strength, normal, precision)
+    """ A verb phrase. """
+
+    def __init__(self,
+                 text: str = None,
+                 strength: float = 0.5,
+                 precision: float = 0.5):
+
+        Modifier.__init__(self, "VerbPhrase", text,
+                          strength, precision)
 
     def to_adverb(self):
-        return AdverbPhrase(**self.locals(skip=["text", "typ"]), text=self.text + " to")
+        """ Convert to adverb phrase. """
 
-def _adv(i: float, s: float, t: str):
-    return AdverbPhrase   (text=t,strength=s, precision=(100.0-i)/100.0)
-def _adj(i: float, s: float, t: str):
-    return AdjectivePhrase(text=t,strength=s, precision=(100.0-i)/100.0)
-def _nou(i: float, s: float, t: str):
-    return NounPhrase     (text=t,strength=s, precision=(100.0-i)/100.0)
-def _ver(i: float, s: float, t: str):
-    return VerbPhrase     (text=t,strength=s, precision=(100.0-i)/100.0)
+        return AdverbPhrase(**self.locals(skip=["text", "typ"]),
+                            text=self.text + " to")
 
-my_phrases_raw = [
-    _adv(0.3,  0.99, "always"),
-    _adj(1.1,  0.97, "certain"),
-    _adv(5.5,  0.91, "almost always"),
-    _nou(5.4,  0.91, "very high probability"),
+def _adv(prec: float, strength: float, text: str):
+    return AdverbPhrase(text=text, strength=2.0*(strength-0.5), precision=(100.0-prec)/100.0)
+
+def _adj(prec: float, strength: float, text: str):
+    return AdjectivePhrase(text=text, strength=2.0*(strength-0.5), precision=(100.0-prec)/100.0)
+
+def _nou(prec: float, strength: float, text: str):
+    return NounPhrase(text=text, strength=2.0*(strength-0.5), precision=(100.0-prec)/100.0)
+
+def _ver(prec: float, strength: float, text: str):
+    return VerbPhrase(text=text, strength=2.0*(strength-0.5), precision=(100.0-prec)/100.0)
+
+# phrases from Quantifying Probabilistic Expressions
+# Author(s): Frederick Mosteller and Cleo Youtz
+# Source: Statistical Science, Vol. 5, No. 1 (Feb., 1990), pp. 2-12
+# https://pdfs.semanticscholar.org/a20c/7c3a5c41d4d7461074da38af95bfa1c78fd0.pdf
+MY_PHRASES = [
+    _adv(0.3, 0.99, "always"),
+    _adj(1.1, 0.97, "certain"),
+    _adv(5.5, 0.91, "almost always"),
+    _nou(5.4, 0.91, "very high probability"),
     _adv(12.4, 0.87, "very often"),
-    _adj(7.5,  0.86, "almost certain"),
+    _adj(7.5, 0.86, "almost certain"),
     _adv(10.1, 0.85, "very likely"), # also adjective
-    _adj(8.9,  0.85, "very probable"),
+    _adj(8.9, 0.85, "very probable"),
     _adj(14.5, 0.81, "very frequent"),
     _nou(10.1, 0.81, "high probability"),
     _nou(11.7, 0.81, "high chance"),
@@ -89,14 +154,14 @@ my_phrases_raw = [
     _adv(10.4, 0.69, "often"),
     _adj(17.9, 0.66, "liable to happen"),
     _adj(15.2, 0.61, "frequent"),
-    _adv(3.3,  0.61, "more often than not"),
-    _nou(6.9,  0.58, "better than even chance"),
+    _adv(3.3, 0.61, "more often than not"),
+    _nou(6.9, 0.58, "better than even chance"),
     _nou(18.5, 0.52, "moderate probability"),
-    _adv(0.6,  0.50, "as often as not"),
-    _nou(0.5,  0.50, "even chance"),
+    _adv(0.6, 0.50, "as often as not"),
+    _nou(0.5, 0.50, "even chance"),
     _adj(24.6, 0.45, "not infrequent"),
-    _nou(5.4,  0.41, "less than even chance"),
-    _adj(7.9,  0.38, "less often than not"),
+    _nou(5.4, 0.41, "less than even chance"),
+    _adj(7.9, 0.38, "less often than not"),
     _adj(42.7, 0.37, "possible"),
     _nou(29.1, 0.37, "not unreasonable"),
     _ver(30.2, 0.36, "might happen"),
@@ -112,38 +177,47 @@ my_phrases_raw = [
     _adv(14.5, 0.14, "not often"),
     _adv(14.3, 0.13, "not very often"),
     _nou(11.3, 0.13, "poor chance"),
-    _nou(7.8,  0.13, "low chance"),
+    _nou(7.8, 0.13, "low chance"),
     _adv(10.1, 0.12, "seldom"),          # also adjective
-    _adv(5.9,  0.08, "very unlikely"),    # adjective ? 
-    _adj(6.4,  0.07, "very infrequent"),
-    _adv(6.5,  0.07, "rarely"),
-    _nou(5.7,  0.06, "very low probability"),
-    _adj(5.9,  0.06, "very improbable"),
-    _adv(4.5,  0.06, "very seldom"),
-    _adv(3.8,  0.04, "very rarely"),
-    _adv(3.4,  0.03, "almost never"),
-    _adj(0.3,  0.01, "impossible"),
-    _adv(0.3,  0.01, "never")
+    _adv(5.9, 0.08, "very unlikely"),    # adjective ?
+    _adj(6.4, 0.07, "very infrequent"),
+    _adv(6.5, 0.07, "rarely"),
+    _nou(5.7, 0.06, "very low probability"),
+    _adj(5.9, 0.06, "very improbable"),
+    _adv(4.5, 0.06, "very seldom"),
+    _adv(3.8, 0.04, "very rarely"),
+    _adv(3.4, 0.03, "almost never"),
+    _adj(0.3, 0.01, "impossible"),
+    _adv(0.3, 0.01, "never")
 ]
 
 def closest_modifier(phrases, strength):
+    """ Get the closest phrase to the given strength. """
+
     return sorted(phrases, key=lambda w: abs(strength-w.strength))[0]
 
-def best_modifier_in_range(phrases, lower, upper):
-    ok = list(filter(lambda w: w.strength > lower and w.strength < upper, phrases))
-    best = sorted(ok, key=lambda w: w.precision)
-    if len(best) > 0: return best[-1]
-    else: return None
+def best_modifier_in_range(phrases, lower: float, upper: float):
+    """ Get the best precision modifier in the given range of strength. """
+
+    ok_phrases = list(filter(lambda w: w.strength > lower and w.strength < upper, phrases))
+    best_phrases = sorted(ok_phrases, key=lambda w: w.precision)
+    if best_phrases:
+        return best_phrases[-1]
+    return None
 
 def create_modifier_phrases(min_precision=0.0, resolution=0.1, types=lambda x: True):
-    phrases_good = [w for w in my_phrases_raw 
+    """ Create a list of best phrases to fill in each resolution interval. """
+
+    phrases_good = [w for w in MY_PHRASES
                     if types(w) and w.precision >= min_precision]
     phrases_best = list(reversed(list(
         filter(
             lambda x: x is not None,
-            [best_modifier_in_range(phrases_good, 
-                f-resolution/2.0,
-                f+resolution/2.0)
-             for f in misc.frange(-1.0 - resolution, 1.0 + resolution, resolution)]))))
+            [best_modifier_in_range(phrases_good,
+                                    f-resolution/2.0,
+                                    f+resolution/2.0)
+             for f in misc.frange(-1.0 - resolution,
+                                  1.0 + resolution,
+                                  resolution)]))))
 
     return phrases_best
