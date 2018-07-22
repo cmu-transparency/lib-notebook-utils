@@ -70,6 +70,31 @@ def less(amap: Mapping[A, B], exceptions: Iterable[A]) -> Mapping[A, B]:
 
 ### mixins
 
+class ConfigurationMixin(object):
+    """
+    An object to store a set of key-value pairs with restrictions on
+    the set of keys allowed.
+    """
+
+    __slots__ = []
+
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
+    def set(self, key, val):
+        """
+        Map key to val, return self for chaining sets.
+        """
+        setattr(self, key, val)
+        return self
+
+    def get(self, key):
+        """
+        Get value at key.
+        """
+        return getattr(self, key)
+
 class LessMixin(object):  # pylint: disable=too-few-public-methods
     """ Provides the less method. """
 

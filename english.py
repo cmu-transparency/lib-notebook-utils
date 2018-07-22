@@ -123,16 +123,24 @@ class VerbPhrase(Modifier):
                             text=self.text + " to")
 
 def _adv(prec: float, strength: float, text: str):
-    return AdverbPhrase(text=text, strength=2.0*(float(strength)/100.-0.5), precision=(100.0-prec)/100.0)
+    return AdverbPhrase(text=text,
+                        strength=2.0*(float(strength)/100.-0.5),
+                        precision=(100.0-prec)/100.0)
 
 def _adj(prec: float, strength: float, text: str):
-    return AdjectivePhrase(text=text, strength=2.0*(float(strength)/100.-0.5), precision=(100.0-prec)/100.0)
+    return AdjectivePhrase(text=text,
+                           strength=2.0*(float(strength)/100.-0.5),
+                           precision=(100.0-prec)/100.0)
 
 def _nou(prec: float, strength: float, text: str):
-    return NounPhrase(text=text, strength=2.0*(float(strength)/100.-0.5), precision=(100.0-prec)/100.0)
+    return NounPhrase(text=text,
+                      strength=2.0*(float(strength)/100.-0.5),
+                      precision=(100.0-prec)/100.0)
 
 def _ver(prec: float, strength: float, text: str):
-    return VerbPhrase(text=text, strength=2.0*(float(strength)/100.-0.5), precision=(100.0-prec)/100.0)
+    return VerbPhrase(text=text,
+                      strength=2.0*(float(strength)/100.-0.5),
+                      precision=(100.0-prec)/100.0)
 
 # phrases from Quantifying Probabilistic Expressions
 # Author(s): Frederick Mosteller and Cleo Youtz
@@ -224,10 +232,15 @@ def create_modifier_phrases(min_precision=0.0, resolution=0.1, types=lambda x: T
 
     return phrases_best
 
-def oxford_commas(al):
+def oxford_commas(al, fin: str):
+    """
+    Given a set of words, intersperse commas and fin before last
+    word in the oxford commas style.
+    """
+    
     ll = len(al)
     if ll <= 1: return al
-    if ll == 2: return [al[0], " and ", al[1]]
+    if ll == 2: return [al[0], f" {fin} ", al[1]]  # pylint: disable=syntax-error
     ret = []
     ret.append(al.pop())
     for _ in range(len(al)-2):
@@ -237,7 +250,3 @@ def oxford_commas(al):
     ret.append(al.pop())
 
     return ret
-
-oxford_commas(["1"])
-oxford_commas(["1","2"])
-oxford_commas(["1","2","3"])
