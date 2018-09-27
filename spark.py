@@ -1,14 +1,11 @@
 """ Apache Spark utilities. """
 
-#import findspark
-#findspark.init()
 
 import os
 import shutil
 from typing import List, Iterable
 
-#import pyspark                        # pylint: disable=import-error
-from pyspark import SparkContext      # pylint: disable=import-error
+from pyspark import SparkContext, SparkConf      # pylint: disable=import-error
 from pyspark.sql import SQLContext, SparkSession, DataFrame  # pylint: disable=import-error
 from pyspark.sql.types import StringType         # pylint: disable=import-error
 from pyspark.ml.feature import StringIndexer, VectorAssembler  # pylint: disable=import-error
@@ -17,28 +14,26 @@ from misc import named_of_indexed, tab, A
 from jvm import class_name
 
 
-#SparkContext.setSystemProperty('spark.executor.memory', '8g')
-#SparkContext.setSystemProperty('spark.python.worker.memory', '8g')
-#SparkContext.setSystemProperty('spark.driver.memory', '16g')
-#ss = SparkSession\
-#     .builder\
-#     .master("local[20]")\
-#     .appName("testing")\
-#     .config('spark.executor.memory', '8G')\
-#     .config('spark.worker.memory', '8G')\
-#     .config('spark.driver.memory', '8G')\
-#     .getOrCreate()
-#     .set('spark.driver.memory', '45G')
-#     .set('spark.driver.maxResultSize', '10G')
-#conf = SparkConf().setAppName("App")
-#conf = (conf.setMaster('local[*]')
-#        .set('spark.executor.memory', '4G')
-#        .set('spark.driver.memory', '45G')
-#        .set('spark.driver.maxResultSize', '10G'))
+# SparkContext.setSystemProperty('spark.executor.memory', '8g')
+# SparkContext.setSystemProperty('spark.python.worker.memory', '8g')
+# SparkContext.setSystemProperty('spark.driver.memory', '16g')
+# ss = SparkSession\
+#      .builder\
+#      .master("local[20]")\
+#      .appName("testing")\
+#      .config('spark.executor.memory', '8G')\
+#      .config('spark.worker.memory', '8G')\
+#      .config('spark.driver.memory', '8G')\
+#      .getOrCreate()
+#      .set('spark.driver.memory', '45G')
+#      .set('spark.driver.maxResultSize', '10G')
+# conf = SparkConf().setAppName("App")
+# conf = (conf.setMaster('local[*]')
+#         .set('spark.executor.memory', '4G')
+#         .set('spark.driver.memory', '45G')
+#         .set('spark.driver.maxResultSize', '10G'))
 
-### old spark utils
-
-#from py4j.java_collections import JavaIterator
+# old spark utils #
 
 class ByKeyAndIndex(object):  # pylint: disable=too-few-public-methods
     """
@@ -60,6 +55,7 @@ class ByKeyAndIndex(object):  # pylint: disable=too-few-public-methods
             return self.items_by_index[index]
         return self.items_by_key[str(index)]
 
+
 class ValueMapper(object):  # pylint: disable=too-many-instance-attributes
     """ Holds the information about column names of a dataset, and the
     values of a dataset that were converted to doubles in order to use
@@ -69,8 +65,8 @@ class ValueMapper(object):  # pylint: disable=too-many-instance-attributes
                  "columns_by_idx", "types_by_idx", "values_by_idx", "target_name"]
 
     def __init__(self, columns_by_idx: List[str], types_by_idx, values_by_idx):
-        #self.target_idx = target_idx
-        #self.target_name = str(columns_by_idx[target_idx])
+        # self.target_idx = target_idx
+        # self.target_name = str(columns_by_idx[target_idx])
         self.columns_by_idx = columns_by_idx
         self.types_by_idx = types_by_idx
         self.values_by_idx = values_by_idx
@@ -94,7 +90,8 @@ class ValueMapper(object):  # pylint: disable=too-many-instance-attributes
         self._reconstruct()
 
     def _compute_indices(self):
-        return [{name: index for (name, index) in zip(col, range(len(col)))} for col in self.values]
+        return [{name: index for (name, index) in zip(col, range(len(col)))}
+                for col in self.values]
 
     def set_target(self, target_col: str):
         """ Set target column name. """
@@ -110,6 +107,7 @@ class ValueMapper(object):  # pylint: disable=too-many-instance-attributes
 
         self.target = ValueMapper([target_col], [target_type], [target_values])
         self.remove(target_idx)
+
 
 class Spark(object):
     """ Store the various elements of of a spark setup and context."""
@@ -185,11 +183,12 @@ class Spark(object):
     def load_csv(self, filename, sep=","):
         """ Load a CSV file into a dataframe. """
 
-        return self.session.read.csv(filename,\
-                           inferSchema=True,\
-                           sep=sep,\
-                           header=True,\
-                           )
+        return self.session.read.csv(
+            filename,
+            inferSchema=True,
+            sep=sep,
+            header=True
+        )
 
     def save_csv(self, filename: str, dataframe: DataFrame, sep: str = ","):
         # pylint: disable=no-self-use
@@ -198,20 +197,21 @@ class Spark(object):
         if os.path.exists(filename):
             shutil.rmtree(filename)
 
-        return dataframe.write.csv(filename,\
-                                   sep=sep,\
-                                   header=True,\
-                                   )
+        return dataframe.write.csv(
+            filename,
+            sep=sep,
+            header=True
+        )
 
     def read_csv(self, filename,
                  header='true', encoding='UTF-8', inferschema='true'):
         """ Read a CSV file into a dataframe. """
 
-        return self.sql.read.format("com.databricks.spark.csv")\
-                    .options(header=header,
-                             encoding=encoding,
-                             inferschema=inferschema
-                            ).load(filename)
+        return self.sql.read.format("com.databricks.spark.csv").options(
+            header=header,
+            encoding=encoding,
+            inferschema=inferschema
+        ).load(filename)
 
 
 def assemble_features(dataframe, columns,
@@ -227,6 +227,7 @@ def assemble_features(dataframe, columns,
                                 outputCol=output_column)
 
     return assembler.transform(dataframe)
+
 
 def index_nominals(dataframe, renamer=lambda string: u"indexed_%s" % string):
     """ Create indexed versions of nominal features in the given
@@ -248,9 +249,11 @@ def index_nominals(dataframe, renamer=lambda string: u"indexed_%s" % string):
     for idx, col in enumerate(all_cols):
         if types_by_idx[idx] is StringType():
             # Encode nominal features into doubles.
-            indexer = StringIndexer(inputCol=col,
-                                    outputCol=renamer(col)
-                                   ).fit(dataframe_indexing)
+            indexer = StringIndexer(
+                inputCol=col,
+                outputCol=renamer(col)
+            ).fit(dataframe_indexing)
+
             labels_by_idx[idx] = indexer.labels
             dataframe_indexing = indexer.transform(dataframe_indexing)
             columns.append(renamer(col))
@@ -261,13 +264,14 @@ def index_nominals(dataframe, renamer=lambda string: u"indexed_%s" % string):
     # Create the object that holds the information necessary to get
     # column and value names for the various converted features and
     # values.
-    namer = ValueMapper(#0,
+    namer = ValueMapper(
         columns_by_idx=names_by_idx,
         types_by_idx=types_by_idx,
         values_by_idx=labels_by_idx
-        )
+    )
 
     return dataframe_indexing, columns, namer
+
 
 def pylist_of_scala_list(alist: Iterable[A]):
     """
@@ -281,6 +285,7 @@ def pylist_of_scala_list(alist: Iterable[A]):
         return []
     elif typ == "$colon$colon":
         return [alist.head()] + pylist_of_scala_list(alist.tail())
+
 
 def string_of_mllib_split(split, namer=None):
     """
@@ -308,6 +313,7 @@ def string_of_mllib_split(split, namer=None):
 
     return ret
 
+
 def string_of_mllib_node(node, namer=None):
     """
     String representation of a scala spark mllib (old API) Node:
@@ -331,11 +337,11 @@ def string_of_mllib_node(node, namer=None):
     if not node.isLeaf():
         # https://spark.apache.org/docs/latest/api/scala/index.html#org.apache.spark.ml.tree.InternalNode
         ret += u"if %s (%s) then\n" % \
-               (string_of_mllib_split( \
+               (string_of_mllib_split(
                   node.split().get(),
                   namer),
                 info) + \
-               tab(string_of_mllib_node(node.leftNode().get(), namer)) +  u"\n" + \
+               tab(string_of_mllib_node(node.leftNode().get(), namer)) + u"\n" + \
                u"else\n" + \
                tab(string_of_mllib_node(node.rightNode().get(), namer))
 
@@ -350,6 +356,7 @@ def string_of_mllib_node(node, namer=None):
                                  [predict])
 
     return ret
+
 
 def string_of_split(split, namer=None):
     """
@@ -383,6 +390,7 @@ def string_of_split(split, namer=None):
 
     return ret
 
+
 def string_of_node(node, namer=None):
     """
     String representation of a scala spark Node:
@@ -407,7 +415,7 @@ def string_of_node(node, namer=None):
         # https://spark.apache.org/docs/latest/api/scala/index.html#org.apache.spark.ml.tree.InternalNode
         ret += u"if %s (%s) then\n" % (string_of_split(node.split(), namer),
                                        info) + \
-               tab(string_of_node(node.leftChild(), namer)) +  u"\n" + \
+               tab(string_of_node(node.leftChild(), namer)) + u"\n" + \
                u"else\n" + \
                tab(string_of_node(node.rightChild(), namer))
 

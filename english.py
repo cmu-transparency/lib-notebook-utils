@@ -5,9 +5,8 @@ experimentally derived perception of possibility.
 """
 
 import copy
-from typing import List
-
 import utils.misc as misc
+
 
 class Phrase(misc.LocalsMixin):  # pylint: disable=too-few-public-methods
     """ English phrase. """
@@ -17,24 +16,19 @@ class Phrase(misc.LocalsMixin):  # pylint: disable=too-few-public-methods
 
     def __str__(self):
         return self.text
-    
-    def copy_with(self, **kwargs): 
+
+    def copy_with(self, **kwargs):
         cself = copy.deepcopy(self)
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             setattr(cself, k, v)
         return cself
-    #def __repr__(self): return f"Phrase({repr(self.text)})"
 
-#class possibility(object):
-#    """ Possibility and its statistics. """
-#
-#    def __init__(self, possibility: float, positive, normal
 
 class Modifier(Phrase):  # pylint: disable=too-many-arguments,too-few-public-methods
     """ Modifier phrases (indicate possibility and positivity). """
 
     all_variants = ["NounPhrase", "VerbPhrase", "AdjectivePhrase", "AdverbPhrase"]
-    
+
     def __init__(self,
                  typ: str = "NounPhrase",
                  text: str = None,
@@ -48,23 +42,21 @@ class Modifier(Phrase):  # pylint: disable=too-many-arguments,too-few-public-met
         self.confidence = confidence
         self.typ = typ
 
-        self_variant = self
-        
         self.variants = {
             k: self.__class__(k, v, possibility,
                               confidence,
-                              **{**variants, typ: text}) 
-            for k,v in variants.items()
+                              **{**variants, typ: text})
+            for k, v in variants.items()
         }
         for k in Modifier.all_variants:
             if k in self.variants:
                 continue
             else:
                 self.variants[k] = self.convert_to_variant(k)
-            
-        #for k,v in self.variants.items():
-        #    setattr(self, k, v)
-        
+
+        # for k,v in self.variants.items():
+        #     setattr(self, k, v)
+
     def convert_to_variant(self, variant: str):
         if variant == self.typ:
             return self
@@ -77,10 +69,13 @@ class Modifier(Phrase):  # pylint: disable=too-many-arguments,too-few-public-met
         elif variant == "AdverbPhrase":
             return self.to_adverb()
         return None
-    
+
     def to_noun(self): return None
+
     def to_verb(self): return None
+
     def to_adjective(self): return None
+
     def to_adverb(self): return None
 
     def get_variant(self, variant: str):
@@ -88,15 +83,16 @@ class Modifier(Phrase):  # pylint: disable=too-many-arguments,too-few-public-met
             return self.variants[variant]
         else:
             return None
-    
-     #def __str__(self):
-        #return f"{self.text}/\t{self.possibility}@\t{self.confidence}"
+
+    # def __str__(self):
+    # return f"{self.text}/\t{self.possibility}@\t{self.confidence}"
 
     def __repr__(self):
         return f"{self.typ}(\ttext={self.text},\
                   \tpossibility={self.possibility},\
                   \tconfidence={self.confidence}\
-                 )".replace("\n", "")            # pylint: disable=E0001
+                 )".replace("\n", "")
+
 
 class AdverbPhrase(Modifier):
     """ An adverb phrase. """
@@ -110,7 +106,7 @@ class AdverbPhrase(Modifier):
         Modifier.__init__(self, "AdverbPhrase", text,
                           possibility, confidence,
                           **variants)
-      
+
     def to_adverb(self):
         """ Convert to adverb phrase. """
         return self
@@ -118,6 +114,7 @@ class AdverbPhrase(Modifier):
     def to_adjective(self):
         """ Convert to adjective phrase. """
         return None
+
 
 class AdjectivePhrase(Modifier):
     """ An adjective phrase. """
@@ -131,7 +128,7 @@ class AdjectivePhrase(Modifier):
         Modifier.__init__(self, "AdjectivePhrase", text,
                           possibility, confidence,
                           **variants)
-   
+
     def to_adverb(self):
         """ Convert to adverb phrase. """
 
@@ -144,8 +141,8 @@ class AdjectivePhrase(Modifier):
 
         return self.copy_with(typ="AdverbPhrase",
                               text=text)
-            
-        #return AdverbPhrase(**self.locals(skip=["text", "typ", "variants"]),
+
+        # return AdverbPhrase(**self.locals(skip=["text", "typ", "variants"]),
         #                    text=text,
         #                    **self.variants)
 
@@ -165,10 +162,11 @@ class NounPhrase(Modifier):
     def to_adverb(self):
         """ Convert to adverb phrase. """
         return self.copy_with(typ="AdverbPhrase",
-                              text = "with " + self.text)
-#        return AdverbPhrase(**self.locals(skip=["text", "typ", "variants"]),
-#                            text="with " + self.text,
-#                            **self.variants)
+                              text="with " + self.text)
+    #        return AdverbPhrase(**self.locals(skip=["text", "typ", "variants"]),
+    #                            text="with " + self.text,
+    #                            **self.variants)
+
 
 class VerbPhrase(Modifier):
     """ A verb phrase. """
@@ -188,34 +186,39 @@ class VerbPhrase(Modifier):
 
         return self.copy_with(typ="AdverbPhrase",
                               text=self.text + " to")
-        
-        #return AdverbPhrase(**self.locals(skip=["text", "typ", "variants"]),
-        #                    text=self.text + " to",
-        #                    **self.variants)
+
+        # return AdverbPhrase(**self.locals(skip=["text", "typ", "variants"]),
+        #                     text=self.text + " to",
+        #                     **self.variants)
+
 
 def _adv(prec: float, possibility: float, text: str, **variants):
     return AdverbPhrase(text=text,
-                        possibility=2.0*(float(possibility)/100.-0.5),
+                        possibility=float(possibility)/100.,
                         confidence=(100.0-prec)/100.0,
                         **variants)
 
+
 def _adj(prec: float, possibility: float, text: str, **variants):
     return AdjectivePhrase(text=text,
-                           possibility=2.0*(float(possibility)/100.-0.5),
+                           possibility=float(possibility)/100.,
                            confidence=(100.0-prec)/100.0,
                            **variants)
 
+
 def _nou(prec: float, possibility: float, text: str, **variants):
     return NounPhrase(text=text,
-                      possibility=2.0*(float(possibility)/100.-0.5),
+                      possibility=float(possibility)/100.,
                       confidence=(100.0-prec)/100.0,
                       **variants)
 
+
 def _ver(prec: float, possibility: float, text: str, **variants):
     return VerbPhrase(text=text,
-                      possibility=2.0*(float(possibility)/100.-0.5),
+                      possibility=float(possibility)/100.,
                       confidence=(100.0-prec)/100.0,
                       **variants)
+
 
 # phrases from Quantifying Probabilistic Expressions
 # Author(s): Frederick Mosteller and Cleo Youtz
@@ -228,7 +231,7 @@ MY_PHRASES = [
     _nou(5.4, 91, "very high probability"),
     _adv(12.4, 87, "very often"),
     _adj(7.5, 86, "almost certain"),
-    _adv(10.1, 85, "very likely"), # also adjective
+    _adv(10.1, 85, "very likely"),  # also adjective
     _adj(8.9, 85, "very probable"),
     _adj(14.5, 81, "very frequent"),
     _nou(10.1, 81, "high probability"),
@@ -276,10 +279,12 @@ MY_PHRASES = [
     _adv(0.3, 1, "never")
 ]
 
+
 def closest_phrase(phrases, possibility):
     """ Get the closest phrase to the given possibility. """
 
     return sorted(phrases, key=lambda w: abs(possibility-w.possibility))[0]
+
 
 def best_modifier_in_range(phrases, lower: float, upper: float):
     """ Get the best confidence modifier in the given range of possibility. """
@@ -289,6 +294,7 @@ def best_modifier_in_range(phrases, lower: float, upper: float):
     if best_phrases:
         return best_phrases[-1]
     return None
+
 
 def create_modifier_phrases(min_confidence=0.0, interval=0.1, types=lambda x: True):
     """ Create a list of best phrases to fill in each resolution interval. """
@@ -301,21 +307,24 @@ def create_modifier_phrases(min_confidence=0.0, interval=0.1, types=lambda x: Tr
             [best_modifier_in_range(phrases_good,
                                     f-interval/2.0,
                                     f+interval/2.0)
-             for f in misc.frange(-1.0 - interval,
+             for f in misc.frange(0.0 - interval,
                                   1.0 + interval,
                                   interval)]))))
 
     return phrases_best
+
 
 def oxford_commas(al, fin: str):
     """
     Given a set of words, intersperse commas and fin before last
     word in the oxford commas style.
     """
-    
+
     ll = len(al)
-    if ll <= 1: return al
-    if ll == 2: return [al[0], f" {fin} ", al[1]]  # pylint: disable=syntax-error
+    if ll <= 1:
+        return al
+    if ll == 2:
+        return [al[0], f" {fin} ", al[1]]
     ret = []
     ret.append(al.pop())
     for _ in range(len(al)-2):
@@ -325,8 +334,3 @@ def oxford_commas(al, fin: str):
     ret.append(al.pop())
 
     return ret
-
-#a1 = MY_PHRASES[1]
-#print(repr(a1))
-#for k,v in a1.variants.items():
-#    print(k, repr(v))

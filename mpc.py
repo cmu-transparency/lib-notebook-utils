@@ -6,7 +6,6 @@ import copy
 # http://nbviewer.jupyter.org/gist/minrk/4563193
 import sys
 import os
-#import time
 from contextlib import contextmanager
 
 import misc
@@ -14,6 +13,7 @@ import misc
 # we need a lock, so that other threads don't snatch control
 # while we have set a temporary parent
 stdout_lock = th.Lock()  # pylint: disable=invalid-name
+
 
 @contextmanager
 def set_stdout_parent(parent):
@@ -30,6 +30,7 @@ def set_stdout_parent(parent):
             # the flush is important, because that's when the parent_header actually has its effect
             sys.stdout.flush()
             sys.stdout.parent_header = save_parent
+
 
 class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
     """
@@ -100,7 +101,9 @@ class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
         self.running = False
 
     def __str__(self):
-        return "[{self.num_completed}/{self.num_tasks} {self.num_completed_all}]".format(**locals())
+        return "[{self.num_completed}/{self.num_tasks} {self.num_completed_all}]".format(
+            **locals()
+        )
 
     def run(self):
         """ Start execution. """
@@ -110,7 +113,6 @@ class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
         with set_stdout_parent(thread_parent):
             for task in self.tasks:
                 if task in self.completed:
-                    #misc.printme("*")
                     continue
                 misc.printme("{self} running: {task} ".format(**locals()))
                 result = self.evaluator(task)

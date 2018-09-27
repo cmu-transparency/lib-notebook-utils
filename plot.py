@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def plot_counts(alist, title=None):
     """ Plot a histogram. """
 
@@ -14,6 +15,7 @@ def plot_counts(alist, title=None):
     plt.grid(True, axis='y')
     plt.xticks(indexes, labels, rotation='vertical')
     return plt.bar(indexes, counts)
+
 
 def plot_counts_subgroups(alist, sublabels, title=None):
     """ Plot histogram with grouping. """

@@ -2,6 +2,7 @@
 
 import numpy as np
 
+
 def tree_used_features(tree):
     """
     Get indices of the features used by a given decision tree.
@@ -25,6 +26,7 @@ def tree_used_features(tree):
     recurse(left, right, 0)
 
     return list(ret)
+
 
 def get_code(tree, feature_names, target_names,
              spacer_base="    "):
@@ -54,12 +56,12 @@ def get_code(tree, feature_names, target_names,
 
         spacer = spacer_base * depth
         if threshold[node] != -2:
-            print(spacer + "if ( " + features[node] + " <= " + \
+            print(spacer + "if ( " + features[node] + " <= " +
                   str(threshold[node]) + " ) {")
             if left[node] != -1:
                 recurse((left, right), threshold, features,
                         left[node], depth+1)
-            print(spacer + "}\n" + spacer +"else {")
+            print(spacer + "}\n" + spacer + "else {")
             if right[node] != -1:
                 recurse((left, right), threshold, features,
                         right[node], depth+1)
@@ -70,7 +72,7 @@ def get_code(tree, feature_names, target_names,
                                 target[np.nonzero(target)]):
                 target_name = target_names[idx]
                 target_count = int(val)
-                print(spacer + "return " + str(target_name) + \
+                print(spacer + "return " + str(target_name) +
                       " ( " + str(target_count) + " examples )")
 
     recurse((left, right), threshold, features, 0, 0)

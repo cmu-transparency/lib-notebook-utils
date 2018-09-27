@@ -9,7 +9,7 @@ from typing import TypeVar, Iterable, Mapping, Any
 import vdom         # pylint: disable=import-error
 
 
-### typing
+# typing #
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -26,14 +26,14 @@ Z = TypeVar('Z')
 T = TypeVar('T')
 
 
-### html/vdom
+# html/vdom #
 
 html = vdom.create_component("html", allow_children=True)  # pylint: disable=invalid-name
 head = vdom.create_component("head", allow_children=True)  # pylint: disable=invalid-name
 body = vdom.create_component("body", allow_children=True)  # pylint: disable=invalid-name
 
 
-### accessors
+# accessors #
 
 def _0(atuple):
     return atuple[0]
@@ -49,7 +49,7 @@ def _5(atuple):
     return atuple[5]
 
 
-### iterators
+# iterators #
 
 def frange(begin: float, end: float, width: float = 1.0) -> Iterable[float]:
     """ Range but for floats. """
@@ -60,7 +60,7 @@ def frange(begin: float, end: float, width: float = 1.0) -> Iterable[float]:
         i += width
 
 
-### dicts
+# dicts #
 
 def less(amap: Mapping[A, B], exceptions: Iterable[A]) -> Mapping[A, B]:
     """ Return a new dictionary with items in exceptions removed. """
@@ -68,7 +68,7 @@ def less(amap: Mapping[A, B], exceptions: Iterable[A]) -> Mapping[A, B]:
     return {k: v for k, v in amap.items() if k not in exceptions}
 
 
-### mixins
+# mixins #
 
 class ConfigurationMixin(object):
     """
@@ -94,6 +94,7 @@ class ConfigurationMixin(object):
         Get value at key.
         """
         return getattr(self, key)
+
 
 class LessMixin(object):  # pylint: disable=too-few-public-methods
     """ Provides the less method. """
@@ -134,19 +135,22 @@ class LocalsMixin(object):  # pylint: disable=too-few-public-methods
                 and k not in skip}
 
 
-### IO
+# IO #
 
 def printme(something: Any) -> None:
     """ Print and flush. """
 
     print(something, end='', flush=True)
 
+
 def load(filename: str, pickler=pickle):
     """ Load an object from a file. """
 
-    #print("load %s via %s" % (filename, pickler.__name__))
+    # print("load %s via %s" % (filename, pickler.__name__))
+
     with open(filename, 'rb') as file:
         return pickler.load(file)
+
 
 def load_or_new(filename: str, default: A, pickler=pickle) -> A:
     """ Load a value from a pickle if it exists, otherwise use the
@@ -157,6 +161,7 @@ def load_or_new(filename: str, default: A, pickler=pickle) -> A:
 
     return save(filename, default, pickler=pickler)
 
+
 def save(filename: str, obj: A, pickler=pickle) -> A:
     """ Save a value to a pickle. """
 
@@ -165,7 +170,7 @@ def save(filename: str, obj: A, pickler=pickle) -> A:
     return obj
 
 
-### maths
+# maths #
 
 def lg(d: float) -> float:  # pylint: disable=invalid-name
     """ Log base 2. """
@@ -173,7 +178,7 @@ def lg(d: float) -> float:  # pylint: disable=invalid-name
     return math.log(d, 2.0)
 
 
-### strings
+# strings #
 
 def tab(string: str) -> str:
     """
@@ -183,7 +188,7 @@ def tab(string: str) -> str:
     return u"\n".join([u"  " + l for l in string.split(u"\n")])
 
 
-### unsorted
+# unsorted #
 
 def named_of_indexed(items: Iterable[B], keys=None) -> Mapping[str, B]:
     """
@@ -203,7 +208,7 @@ def named_of_indexed(items: Iterable[B], keys=None) -> Mapping[str, B]:
     return ret
 
 
-### collections
+# collections #
 
 class IdentityDictionary(dict):
     """
@@ -220,7 +225,7 @@ class ArrayDict(dict):
     Combination of array and dictionary, can be accessed either way.
     """
 
-    #__slots__ = ['keys_by_index', 'items_by_index', 'items_by_key']
+    # __slots__ = ['keys_by_index', 'items_by_index', 'items_by_key']
 
     def __init__(self, items_by_index, keys=None, **kwargs):
         """
@@ -248,7 +253,7 @@ class ArrayDict(dict):
         return dict.__getitem__(self, str(index))
 
 
-### command line
+# command line #
 
 def get_args_string() -> str:
     """
