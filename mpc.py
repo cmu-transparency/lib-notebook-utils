@@ -17,10 +17,10 @@ stdout_lock = th.Lock()  # pylint: disable=invalid-name
 
 @contextmanager
 def set_stdout_parent(parent):
+    """A context manager for setting a particular parent for sys.stdout the parent determines the
+    destination cell of output.
     """
-    A context manager for setting a particular parent for sys.stdout
-    the parent determines the destination cell of output.
-    """
+
     save_parent = sys.stdout.parent_header
     with stdout_lock:
         sys.stdout.parent_header = parent
@@ -33,9 +33,8 @@ def set_stdout_parent(parent):
 
 
 class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
-    """
-    Resumable sets of tasks.
-    """
+    """Resumable sets of tasks."""
+
     def __init__(self, filename, input_maker, evaluator):
         th.Thread.__init__(self)
 
@@ -54,7 +53,8 @@ class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
         self.running = False
 
     def reset(self):
-        """ Reset the completed set of tasks. """
+        """Reset the completed set of tasks."""
+
         if os.path.exists(self.filename):
             os.remove(self.filename)
         self.completed = dict()
@@ -65,10 +65,7 @@ class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
         self.num_completed = len(self.completed.keys())
 
     def get_completed_of_tasks(self):
-        """
-        Return all of the completed tasks and record priour
-        completions.
-        """
+        """Return all of the completed tasks and record priour completions."""
 
         ret = {}
         for task in self.tasks:
@@ -77,10 +74,7 @@ class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
         return ret
 
     def get_completed_all(self):
-        """
-        Get all of the completed tasks including ones from
-        previous runs.
-        """
+        """Get all of the completed tasks including ones from previous runs."""
 
         temp = None
         with self.completed_lock:
@@ -88,7 +82,7 @@ class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
         return temp
 
     def get_completed(self):
-        """ Get current run's completed tasks. """
+        """Get current run's completed tasks."""
 
         temp = None
         with self.completed_lock:
@@ -96,7 +90,7 @@ class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
         return temp
 
     def stop(self):
-        """ Stop execution. """
+        """Stop execution."""
 
         self.running = False
 
@@ -106,7 +100,7 @@ class Tasker(th.Thread):  # pylint: disable=too-many-instance-attributes
         )
 
     def run(self):
-        """ Start execution. """
+        """Start execution."""
 
         self.running = True
         thread_parent = sys.stdout.parent_header

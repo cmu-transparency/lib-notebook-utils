@@ -1,12 +1,10 @@
-""" Scikit utilities. """
+"""Scikit utilities."""
 
 import numpy as np
 
 
 def tree_used_features(tree):
-    """
-    Get indices of the features used by a given decision tree.
-    """
+    """Get indices of the features used by a given decision tree."""
 
     left = tree.tree_.children_left
     right = tree.tree_.children_right
@@ -15,7 +13,7 @@ def tree_used_features(tree):
     ret = set()
 
     def recurse(left, right, node):
-        """ Up the tree you go. """
+        """Up the tree you go."""
 
         ret.add(features[node])
         if left[node] != -1:
@@ -43,6 +41,7 @@ def get_code(tree, feature_names, target_names,
     -----
     based on http://stackoverflow.com/a/30104792.
     """
+
     left = tree.tree_.children_left
     right = tree.tree_.children_right
     threshold = tree.tree_.threshold
@@ -50,7 +49,7 @@ def get_code(tree, feature_names, target_names,
     value = tree.tree_.value
 
     def recurse(children, threshold, features, node, depth):
-        """ Up the tree you go. """
+        """Up the tree you go."""
 
         (left, right) = children
 

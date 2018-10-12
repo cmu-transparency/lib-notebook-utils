@@ -2,6 +2,7 @@
 
 import os
 import pickle
+import _pickle as cp
 import math
 import argparse
 from typing import TypeVar, Iterable, Mapping, Any
@@ -37,19 +38,29 @@ body = vdom.create_component("body", allow_children=True)  # pylint: disable=inv
 
 def _0(atuple):
     return atuple[0]
+
+
 def _1(atuple):
     return atuple[1]
+
+
 def _2(atuple):
     return atuple[2]
+
+
 def _3(atuple):
     return atuple[3]
+
+
 def _4(atuple):
     return atuple[4]
+
+
 def _5(atuple):
     return atuple[5]
 
 
-# iterators #
+# iterators
 
 def frange(begin: float, end: float, width: float = 1.0) -> Iterable[float]:
     """ Range but for floats. """
@@ -63,7 +74,7 @@ def frange(begin: float, end: float, width: float = 1.0) -> Iterable[float]:
 # dicts #
 
 def less(amap: Mapping[A, B], exceptions: Iterable[A]) -> Mapping[A, B]:
-    """ Return a new dictionary with items in exceptions removed. """
+    """Return a new dictionary with items in exceptions removed."""
 
     return {k: v for k, v in amap.items() if k not in exceptions}
 
@@ -71,10 +82,7 @@ def less(amap: Mapping[A, B], exceptions: Iterable[A]) -> Mapping[A, B]:
 # mixins #
 
 class ConfigurationMixin(object):
-    """
-    An object to store a set of key-value pairs with restrictions on
-    the set of keys allowed.
-    """
+    """An object to store a set of key-value pairs with restrictions on the set of keys allowed."""
 
     __slots__ = []
 
@@ -83,52 +91,46 @@ class ConfigurationMixin(object):
             setattr(self, key, val)
 
     def set(self, key, val):
-        """
-        Map key to val, return self for chaining sets.
-        """
+        """Map key to val, return self for chaining sets."""
+
         setattr(self, key, val)
         return self
 
     def get(self, key):
-        """
-        Get value at key.
-        """
+        """Get value at key."""
+
         return getattr(self, key)
 
 
 class LessMixin(object):  # pylint: disable=too-few-public-methods
-    """ Provides the less method. """
+    """Provides the less method."""
 
     def less(self: Mapping[A, B], exceptions: Iterable[A]) -> Mapping[A, B]:
-        """ See less above. """
+        """See less above."""
 
         return self.__class__(less(self, exceptions))
 
 
 class PrintedvarsMixin(object):  # pylint: disable=too-few-public-methods
     """ Provides default str and repr functions. """
-    #        def __init__(self):
-    #            object.__init__(self)
 
     def __str__(self):
         return str(self.__dict__)
+
     def __repr__(self):
         return repr(self.__dict__)
 
+
 class LocalsMixin(object):  # pylint: disable=too-few-public-methods
-    """
-    Provides the locals method.
-    """
-    #        def __init__(self):
-    #            object.__init__(self)
+    """Provides the locals method."""
+
     def locals(self, skip=None):
-        """
-        Returns an objects attributes as a dictionary.
-        """
+        """Returns an objects attributes as a dictionary."""
 
         if skip is None:
             skip = []
-        return {k:v for k, v
+
+        return {k: v for k, v
                 in self.__dict__.items()
                 if not (k.startswith('__')
                         and k.endswith('__'))
@@ -138,13 +140,13 @@ class LocalsMixin(object):  # pylint: disable=too-few-public-methods
 # IO #
 
 def printme(something: Any) -> None:
-    """ Print and flush. """
+    """Print and flush."""
 
     print(something, end='', flush=True)
 
 
 def load(filename: str, pickler=pickle):
-    """ Load an object from a file. """
+    """Load an object from a file."""
 
     # print("load %s via %s" % (filename, pickler.__name__))
 
@@ -153,8 +155,7 @@ def load(filename: str, pickler=pickle):
 
 
 def load_or_new(filename: str, default: A, pickler=pickle) -> A:
-    """ Load a value from a pickle if it exists, otherwise use the
-    default."""
+    """Load a value from a pickle if it exists, otherwise use the default."""
 
     if os.path.exists(filename):
         return load(filename, pickler=pickler)
@@ -163,11 +164,16 @@ def load_or_new(filename: str, default: A, pickler=pickle) -> A:
 
 
 def save(filename: str, obj: A, pickler=pickle) -> A:
-    """ Save a value to a pickle. """
+    """Save a value to a pickle."""
 
     with open(filename, 'wb') as file:
         pickler.dump(obj, file)
     return obj
+
+
+def load_p2c(filename, pickler=pickle):
+    with open(filename, 'rb') as file:
+        return cp.load(file, encoding='latin1')
 
 
 # maths #
@@ -181,9 +187,7 @@ def lg(d: float) -> float:  # pylint: disable=invalid-name
 # strings #
 
 def tab(string: str) -> str:
-    """
-    Prepend each line in the given string with 2 spaces.
-    """
+    """Prepend each line in the given string with 2 spaces."""
 
     return u"\n".join([u"  " + l for l in string.split(u"\n")])
 
@@ -191,11 +195,9 @@ def tab(string: str) -> str:
 # unsorted #
 
 def named_of_indexed(items: Iterable[B], keys=None) -> Mapping[str, B]:
-    """
-    Given a list of items, create a dictionary that maps their names
-    (their names themselves or their key in the optional keys
-    argument) to the item. Used to convert lists that index by integer
-    to dictionaries that index by name.
+    """Given a list of items, create a dictionary that maps their names (their names themselves or
+    their key in the optional keys argument) to the item. Used to convert lists that index by
+    integer to dictionaries that index by name.
     """
 
     ret = {}
@@ -211,27 +213,17 @@ def named_of_indexed(items: Iterable[B], keys=None) -> Mapping[str, B]:
 # collections #
 
 class IdentityDictionary(dict):
-    """
-    A dictionary that always returns the key when asked for item
-    at key.
-    """
+    """A dictionary that always returns the key when asked for item at key."""
 
     def __getitem__(self, key):
         return key
 
 
 class ArrayDict(dict):
-    """
-    Combination of array and dictionary, can be accessed either way.
-    """
-
-    # __slots__ = ['keys_by_index', 'items_by_index', 'items_by_key']
+    """Combination of array and dictionary, can be accessed either way."""
 
     def __init__(self, items_by_index, keys=None, **kwargs):
-        """
-        If the keys for the items are not provided, the items
-        themselves become the keys.
-        """
+        """If the keys for the items are not provided, the items themselves become the keys."""
 
         if keys is None:
             keys = items_by_index
@@ -256,9 +248,7 @@ class ArrayDict(dict):
 # command line #
 
 def get_args_string() -> str:
-    """
-    Command line parser for a single string argument.
-    """
+    """Command line parser for a single string argument."""
 
     parser = argparse.ArgumentParser()
 
@@ -268,8 +258,10 @@ def get_args_string() -> str:
 
     return args.string
 
+
 def get_args_2strings() -> (str, str):
-    """ Command line parser for two string arguments. """
+    """Command line parser for two string arguments."""
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("string1", type=str)

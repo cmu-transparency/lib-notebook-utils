@@ -1,5 +1,4 @@
-""" Apache Spark utilities. """
-
+"""Apache Spark utilities."""
 
 import os
 import shutil
@@ -36,15 +35,12 @@ from jvm import class_name
 # old spark utils #
 
 class ByKeyAndIndex(object):  # pylint: disable=too-few-public-methods
-    """
-    A list of items that can be accessed either by index or by a key.
-    """
+    """A list of items that can be accessed either by index or by a key."""
 
     __slots__ = ['keys_by_index', 'items_by_index', 'items_by_key']
 
     def __init__(self, items_by_index, keys=None):
-        """ If the keys for the items are not provided, the items
-        themselves become the keys."""
+        """If the keys for the items are not provided, the items themselves become the keys."""
 
         self.keys_by_index = keys
         self.items_by_index = items_by_index
@@ -57,9 +53,9 @@ class ByKeyAndIndex(object):  # pylint: disable=too-few-public-methods
 
 
 class ValueMapper(object):  # pylint: disable=too-many-instance-attributes
-    """ Holds the information about column names of a dataset, and the
-    values of a dataset that were converted to doubles in order to use
-    various spark models. """
+    """Holds the information about column names of a dataset, and the values of a dataset that were
+    converted to doubles in order to use various spark models.
+    """
 
     __slots__ = ['columns', 'types', 'values', 'indices', "target",
                  "columns_by_idx", "types_by_idx", "values_by_idx", "target_name"]
@@ -82,7 +78,7 @@ class ValueMapper(object):  # pylint: disable=too-many-instance-attributes
         self.indices = ByKeyAndIndex(self._compute_indices(), keys=self.columns_by_idx)
 
     def remove(self, idx: int):
-        """ Remove an item by index. """
+        """Remove an item by index."""
 
         self.columns_by_idx.pop(idx)
         self.types_by_idx.pop(idx)
@@ -94,7 +90,7 @@ class ValueMapper(object):  # pylint: disable=too-many-instance-attributes
                 for col in self.values]
 
     def set_target(self, target_col: str):
-        """ Set target column name. """
+        """Set target column name."""
 
         target_idx = self.columns.keys_by_index.index(target_col)
         target_type = self.types[target_idx]
@@ -110,12 +106,12 @@ class ValueMapper(object):  # pylint: disable=too-many-instance-attributes
 
 
 class Spark(object):
-    """ Store the various elements of of a spark setup and context."""
+    """Store the various elements of of a spark setup and context."""
 
     __slots__ = ['conf', 'spark', 'sql', "session", "jvm", "master"]
 
-    def __init__(self, master="local[*]"):
-        """ Create only the spark configuration at first. """
+    def __init__(self, master="local[*]") -> None:
+        """Create only the spark configuration at first."""
 
         self.conf = SparkConf().setMaster(master)  # pylint: disable=undefined-variable
         self.master = master
@@ -127,8 +123,7 @@ class Spark(object):
         self.session = None
 
     def start(self):
-        """ Initialize the rest of the stuff, assuming the
-        configuration has been filled in."""
+        """Initialize the rest of the stuff, assuming the configuration has been filled in."""
 
         self.session = SparkSession\
             .builder\
@@ -147,9 +142,9 @@ class Spark(object):
         return self
 
     def __getattr__(self, name):
-        """ For attributes not provided by this Spark object, try to
-        find the attribute in one of the three objects from spark
-        itself."""
+        """For attributes not provided by this Spark object, try to find the attribute in one of
+        the three objects from spark itself.
+        """
 
         component = None
 
@@ -166,9 +161,9 @@ class Spark(object):
         field = getattr(subobject, name)
 
         def enclosed(*args, **kwargs):
-            """ If the field is a method, and it returns one of the 3
-            subcomponents, retrofit it so that it returns this whole
-            class after updating the subcomponent. """
+            """If the field is a method, and it returns one of the 3 subcomponents, retrofit it so
+            that it returns this whole class after updating the subcomponent.
+            """
 
             ret = field(*args, **kwargs)
             if type(ret) is type(subobject):
@@ -181,7 +176,7 @@ class Spark(object):
         return field
 
     def load_csv(self, filename, sep=","):
-        """ Load a CSV file into a dataframe. """
+        """Load a CSV file into a dataframe."""
 
         return self.session.read.csv(
             filename,
@@ -192,7 +187,7 @@ class Spark(object):
 
     def save_csv(self, filename: str, dataframe: DataFrame, sep: str = ","):
         # pylint: disable=no-self-use
-        """ Save a dataframe to CSV file. """
+        """Save a dataframe to CSV file."""
 
         if os.path.exists(filename):
             shutil.rmtree(filename)
@@ -203,9 +198,12 @@ class Spark(object):
             header=True
         )
 
-    def read_csv(self, filename,
-                 header='true', encoding='UTF-8', inferschema='true'):
-        """ Read a CSV file into a dataframe. """
+    def read_csv(self,
+                 filename,
+                 header='true',
+                 encoding='UTF-8',
+                 inferschema='true'):
+        """Read a CSV file into a dataframe."""
 
         return self.sql.read.format("com.databricks.spark.csv").options(
             header=header,
@@ -214,10 +212,11 @@ class Spark(object):
         ).load(filename)
 
 
-def assemble_features(dataframe, columns,
-                      output_column="features", exclude=None):
-    """ Collect the set of given features into a vector column to use
-    for training."""
+def assemble_features(dataframe,
+                      columns,
+                      output_column="features",
+                      exclude=None):
+    """Collect the set of given features into a vector column to use for training."""
 
     if exclude is None:
         exclude = []
@@ -229,9 +228,9 @@ def assemble_features(dataframe, columns,
     return assembler.transform(dataframe)
 
 
-def index_nominals(dataframe, renamer=lambda string: u"indexed_%s" % string):
-    """ Create indexed versions of nominal features in the given
-    dataframe."""
+def index_nominals(dataframe,
+                   renamer=lambda string: u"indexed_%s" % string):
+    """Create indexed versions of nominal features in the given dataframe."""
 
     all_cols = dataframe.columns
 
@@ -274,9 +273,8 @@ def index_nominals(dataframe, renamer=lambda string: u"indexed_%s" % string):
 
 
 def pylist_of_scala_list(alist: Iterable[A]):
-    """
-    Convert scala type :: (the cons in a lisp-like language) to a
-    python list. Py4j has issues with these for some reason.
+    """Convert scala type :: (the cons in a lisp-like language) to a python list. Py4j has issues
+    with these for some reason.
     """
 
     typ = class_name(alist)
@@ -288,9 +286,7 @@ def pylist_of_scala_list(alist: Iterable[A]):
 
 
 def string_of_mllib_split(split, namer=None):
-    """
-    String representation of a scala spark mllib (old API) Split:
-    """
+    """String representation of a scala spark mllib (old API) Split ."""
 
     typ = class_name(split)
 
@@ -315,9 +311,7 @@ def string_of_mllib_split(split, namer=None):
 
 
 def string_of_mllib_node(node, namer=None):
-    """
-    String representation of a scala spark mllib (old API) Node:
-    """
+    """String representation of a scala spark mllib (old API) Node."""
 
     typ = class_name(node)
 
@@ -359,8 +353,7 @@ def string_of_mllib_node(node, namer=None):
 
 
 def string_of_split(split, namer=None):
-    """
-    String representation of a scala spark Split:
+    """String representation of a scala spark Split:
     https://spark.apache.org/docs/latest/api/scala/index.html#org.apache.spark.ml.tree.Split
     """
 
@@ -392,8 +385,7 @@ def string_of_split(split, namer=None):
 
 
 def string_of_node(node, namer=None):
-    """
-    String representation of a scala spark Node:
+    """String representation of a scala spark Node:
     https://spark.apache.org/docs/latest/api/scala/index.html#org.apache.spark.ml.tree.Node
     """
 

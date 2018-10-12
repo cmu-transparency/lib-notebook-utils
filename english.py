@@ -9,7 +9,7 @@ import utils.misc as misc
 
 
 class Phrase(misc.LocalsMixin):  # pylint: disable=too-few-public-methods
-    """ English phrase. """
+    """English phrase."""
 
     def __init__(self, text: str = None):
         self.text = text
@@ -24,8 +24,8 @@ class Phrase(misc.LocalsMixin):  # pylint: disable=too-few-public-methods
         return cself
 
 
-class Modifier(Phrase):  # pylint: disable=too-many-arguments,too-few-public-methods
-    """ Modifier phrases (indicate possibility and positivity). """
+class Modifier(Phrase):
+    """Modifier phrases (indicate possibility and positivity)."""
 
     all_variants = ["NounPhrase", "VerbPhrase", "AdjectivePhrase", "AdverbPhrase"]
 
@@ -43,10 +43,12 @@ class Modifier(Phrase):  # pylint: disable=too-many-arguments,too-few-public-met
         self.typ = typ
 
         self.variants = {
-            k: self.__class__(k, v, possibility,
-                              confidence,
-                              **{**variants, typ: text})
-            for k, v in variants.items()
+            typ: self.__class__(
+                text=text,
+                possibility=possibility,
+                confidence=confidence
+                )
+            for typ, text in variants.items()
         }
         for k in Modifier.all_variants:
             if k in self.variants:
@@ -95,7 +97,7 @@ class Modifier(Phrase):  # pylint: disable=too-many-arguments,too-few-public-met
 
 
 class AdverbPhrase(Modifier):
-    """ An adverb phrase. """
+    """An adverb phrase."""
 
     def __init__(self,
                  text: str = None,
@@ -108,16 +110,16 @@ class AdverbPhrase(Modifier):
                           **variants)
 
     def to_adverb(self):
-        """ Convert to adverb phrase. """
+        """Convert to adverb phrase."""
         return self
 
     def to_adjective(self):
-        """ Convert to adjective phrase. """
+        """Convert to adjective phrase."""
         return None
 
 
 class AdjectivePhrase(Modifier):
-    """ An adjective phrase. """
+    """An adjective phrase."""
 
     def __init__(self,
                  text: str = None,
@@ -130,7 +132,7 @@ class AdjectivePhrase(Modifier):
                           **variants)
 
     def to_adverb(self):
-        """ Convert to adverb phrase. """
+        """Convert to adverb phrase."""
 
         text = self.text
         ending = text[-1]
@@ -146,8 +148,9 @@ class AdjectivePhrase(Modifier):
         #                    text=text,
         #                    **self.variants)
 
+
 class NounPhrase(Modifier):
-    """ A noun phrase. """
+    """A noun phrase."""
 
     def __init__(self,
                  text: str = None,
@@ -155,21 +158,28 @@ class NounPhrase(Modifier):
                  confidence: float = 0.5,
                  **variants):
 
-        Modifier.__init__(self, "NounPhrase", text,
-                          possibility, confidence,
+        if 'NounPhrase' in variants:
+            del variants['NounPhrase']
+
+        Modifier.__init__(self,
+                          typ="NounPhrase",
+                          text=text,
+                          possibility=possibility,
+                          confidence=confidence,
                           **variants)
 
     def to_adverb(self):
-        """ Convert to adverb phrase. """
+        """Convert to adverb phrase."""
+
+        if 'AdverbPhrase' in self.variants:
+            return self.variants['AdverbPhrase']
+
         return self.copy_with(typ="AdverbPhrase",
                               text="with " + self.text)
-    #        return AdverbPhrase(**self.locals(skip=["text", "typ", "variants"]),
-    #                            text="with " + self.text,
-    #                            **self.variants)
 
 
 class VerbPhrase(Modifier):
-    """ A verb phrase. """
+    """A verb phrase."""
 
     def __init__(self,
                  text: str = None,
@@ -182,14 +192,13 @@ class VerbPhrase(Modifier):
                           **variants)
 
     def to_adverb(self):
-        """ Convert to adverb phrase. """
+        """Convert to adverb phrase."""
+
+        if 'AdverbPhrase' in self.variants:
+            return self.variants['AdverbPhrase']
 
         return self.copy_with(typ="AdverbPhrase",
                               text=self.text + " to")
-
-        # return AdverbPhrase(**self.locals(skip=["text", "typ", "variants"]),
-        #                     text=self.text + " to",
-        #                     **self.variants)
 
 
 def _adv(prec: float, possibility: float, text: str, **variants):
@@ -251,7 +260,7 @@ MY_PHRASES = [
     _nou(5.4, 41, "less than even chance"),
     _adj(7.9, 38, "less often than not"),
     _adj(42.7, 37, "possible"),
-    _nou(29.1, 37, "not unreasonable"),
+    _nou(29.1, 37, "not unreasonable", AdverbPhrase="with not unreasonable chance"),
     _ver(30.2, 36, "might happen"),
     _adv(17.5, 26, "sometimes"),        # poor confidence
     _adv(15.1, 23, "now and then"),     # poor confidence

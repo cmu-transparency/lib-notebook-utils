@@ -1,11 +1,11 @@
-""" Matplotlib utilities. """
+"""Matplotlib utilities."""
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 def plot_counts(alist, title=None):
-    """ Plot a histogram. """
+    """Plot a histogram."""
 
     indexes = np.arange(len(alist))
     counts = [r[1] for r in alist]
@@ -18,7 +18,7 @@ def plot_counts(alist, title=None):
 
 
 def plot_counts_subgroups(alist, sublabels, title=None):
-    """ Plot histogram with grouping. """
+    """Plot histogram with grouping."""
 
     width = 0.35
     indexes = np.arange(len(alist))

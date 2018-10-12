@@ -7,7 +7,7 @@ also py4j.
 
 
 def class_name(obj):
-    """ Given a reference to a java object, return its simple class name. """
+    """Given a reference to a java object, return its simple class name."""
 
     # Note the below are java methods which get called using the py4j
     # system.
