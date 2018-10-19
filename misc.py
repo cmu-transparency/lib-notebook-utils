@@ -1,10 +1,12 @@
 """ Misc utilities not yet sorted into individual packages. """
 
 import os
+import sys
 import pickle
 import _pickle as cp
 import math
 import argparse
+import json
 from typing import TypeVar, Iterable, Mapping, Any
 
 import vdom         # pylint: disable=import-error
@@ -111,6 +113,62 @@ class LessMixin(object):  # pylint: disable=too-few-public-methods
         return self.__class__(less(self, exceptions))
 
 
+class DefaultReprMixin(object):  # pylint: disable=too-few-public-methods
+    def __repr__(self):
+        cname = type(self).__name__
+
+        parts = {k: repr(v) for k, v in self.__dict__.items() if v is not self}
+        parts_separated = {k: tab(v, skip_first=True)
+                           if "\n" in v else v for k, v in parts.items()}
+
+        parts_strings = []
+
+        for k, v in parts_separated.items():
+            if len(v) > 20:
+                parts_strings.append(f"{k}={v}, \n")
+            else:
+                parts_strings.append(f"{k}={v}, ")
+
+        parts_string = "".join(parts_strings)
+
+        if "\n" in parts_string:
+            parts_string = tab(parts_string) + "\n"
+
+        return f"{cname}({parts_string})"
+
+
+class MyJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'default'):
+            return obj.default()
+        #else:
+            # print(f"object {obj} {obj.__class__} {obj.__class__.__bases__} is not JSONableMixin")
+            #return json.JSONEncoder.default(self, str(obj))
+
+        return json.JSONEncoder.default(self, obj)
+
+
+class JSONableMixin(object):  # pylint: disable=too-few-public-methods
+    # @classmethod
+    # def fromJSON(cls, source: str):
+    #     cls(**json.loads(source))
+
+    def toJSON(self):
+        return json.dumps(self, cls=MyJSONEncoder)
+
+    def default(self):
+        parts = {
+            k: v.default() if hasattr(v, 'default') else v
+            for k, v in self.__dict__.items()
+        }
+
+        c = self.__class__
+        m = c.__module__
+
+        return {'__class__': f"{m}.{c.__name__}",
+                **parts}
+
+
 class PrintedvarsMixin(object):  # pylint: disable=too-few-public-methods
     """ Provides default str and repr functions. """
 
@@ -186,10 +244,13 @@ def lg(d: float) -> float:  # pylint: disable=invalid-name
 
 # strings #
 
-def tab(string: str) -> str:
-    """Prepend each line in the given string with 2 spaces."""
+def tab(string: str, skip_first: bool = False) -> str:
+    """Prepend each line in the given string with tab."""
 
-    return u"\n".join([u"  " + l for l in string.split(u"\n")])
+    temp = [line if skip_first and line_num == 0 else u"\t" + line
+            for line_num, line in enumerate(string.split(u"\n"))]
+
+    return u"\n".join(temp)
 
 
 # unsorted #
