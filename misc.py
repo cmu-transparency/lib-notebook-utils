@@ -1,12 +1,14 @@
 """ Misc utilities not yet sorted into individual packages. """
 
 import os
-import sys
+# import sys
 import pickle
 import _pickle as cp
 import math
 import argparse
 import json
+import time
+from pathlib import Path
 from typing import TypeVar, Iterable, Mapping, Any
 
 import vdom         # pylint: disable=import-error
@@ -141,9 +143,9 @@ class MyJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'default'):
             return obj.default()
-        #else:
+        # else:
             # print(f"object {obj} {obj.__class__} {obj.__class__.__bases__} is not JSONableMixin")
-            #return json.JSONEncoder.default(self, str(obj))
+            # return json.JSONEncoder.default(self, str(obj))
 
         return json.JSONEncoder.default(self, obj)
 
@@ -154,7 +156,7 @@ class JSONableMixin(object):  # pylint: disable=too-few-public-methods
     #     cls(**json.loads(source))
 
     def toJSON(self):
-        return json.dumps(self, cls=MyJSONEncoder)
+        return json.dumps(self, cls=MyJSONEncoder, indent=4)
 
     def default(self):
         parts = {
@@ -196,6 +198,38 @@ class LocalsMixin(object):  # pylint: disable=too-few-public-methods
 
 
 # IO #
+
+class Watch(object):
+    def __init__(self, filename: str):
+        self.filename = filename
+
+        self.content = None
+        self.updated = None
+        self.update()
+
+    def update(self):
+        self.content = read_file(self.filename)
+        self.updated = os.path.getmtime(self.filename)
+
+    def get(self):
+        if os.path.getmtime(self.filename) > self.updated:
+            self.update()
+        return self.content
+
+    def __str__(self):
+        return self.get()
+
+    def __repr__(self):
+        return f"Watch({self.filename})/updated={time.ctime(self.updated)}"
+
+
+def watch_file(filename: str):
+    return Watch(filename)
+
+
+def read_file(filename: str):
+    return Path(filename).read_text()
+
 
 def printme(something: Any) -> None:
     """Print and flush."""
