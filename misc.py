@@ -12,7 +12,7 @@ def _4(n): return n[4]
 def _5(n): return n[5]
 
 # print and flush
-def printme(s): print(s, end='', flush=True)
+def printme(*ss): print(*ss, end='', flush=True)
 
 def load(filename):
     with open(filename, 'rb') as file:
