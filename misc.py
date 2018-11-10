@@ -200,7 +200,12 @@ class LocalsMixin(object):  # pylint: disable=too-few-public-methods
 # IO #
 
 # print and flush
-def printme(*ss): print(*ss, end='', flush=True)
+
+def printme(*ss):
+    """Print and flush."""
+
+    print(*ss, flush=True)
+
 
 def which(*files):
     for file in files:
@@ -208,6 +213,7 @@ def which(*files):
             return file
 
     return None
+
 
 class Watch(object):
     def __init__(self, filename: str):
@@ -239,12 +245,6 @@ def watch_file(filename: str):
 
 def read_file(filename: str):
     return Path(filename).read_text()
-
-
-def printme(something: Any) -> None:
-    """Print and flush."""
-
-    print(something, end='', flush=True)
 
 
 def load(filename: str, pickler=pickle):
